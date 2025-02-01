@@ -4,6 +4,8 @@ use std::io::Read;
 use std::io::Write;
 use std::net::TcpListener;
 
+// TODO: unit tests
+// TODO: Add  tui on server to view the store
 fn main() -> io::Result<()> {
     let mut store = HashMap::new();
 

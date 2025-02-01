@@ -20,6 +20,21 @@ impl Display for Datum {
     }
 }
 
+impl Datum {
+    pub fn from(raw: &str) -> Self {
+        if raw == "" {
+            return Datum::Bool(true);
+        }
+        if raw == "LIST" {
+            return Datum::List(Vec::new());
+        }
+        if raw.parse::<f64>().is_ok() {
+            return Datum::Num(raw.parse::<i64>().unwrap_or(0));
+        }
+        return Datum::Text(raw.to_string());
+    }
+}
+
 // #[derive(Clone, Eq, PartialEq, Debug)]
 // pub enum Datum {
 //     Null,
