@@ -38,40 +38,73 @@ fn show_key(store: &HashMap<String, Datum>, key: &str) -> String {
 }
 
 // DEL K (Delete k and it's values)
-fn delete_key(store: &HashMap<String, Datum>, key: &str) {
-    todo!();
+fn delete_key(store: &mut HashMap<String, Datum>, key: &str) {
+    store.remove(key);
 }
 
 // DEL K V (If K is a list, delete the value v from it's list)
-fn delete_from_list(store: &HashMap<String, Datum>, key: &str, value: &str) {
-    todo!();
+fn delete_from_list(store: &mut HashMap<String, Datum>, key: &str, index: usize) {
+    if let Some(Datum::List(contents)) = store.get_mut(key) {
+        contents.remove(index);
+    }
 }
 
 pub fn parse_input(store: &mut HashMap<String, Datum>, input: String) -> Option<String> {
     let cmds: Vec<&str> = input.split("|").collect();
+    let mut ret_msg = String::new();
+
     for cmd in cmds {
-        let parts: Vec<&str> = cmd.split(" ").collect();
+        let parts: Vec<&str> = cmd
+            .split(' ')
+            .filter(|s| !s.is_empty())
+            .map(|s| s.trim())
+            .collect();
+
+        println!("{:?}", parts);
 
         if parts[0] == "ADD" {
             if parts.len() == 2 {
                 add_to_store(store, parts[1], "");
+            } else {
+                add_to_store(store, parts[1], parts[2]);
             }
-            add_to_store(store, parts[1], parts[2]);
 
-            return Some(format!("{} Updated", parts[1]));
+            ret_msg = format!("{}\n{} Updated", ret_msg, parts[1]);
         } else if parts[0] == "SHOW" {
-            if parts.len() > 1 {
-                return Some(show_key(store, parts[1]));
+            if parts.len() > 2 {
+                ret_msg = format!("{}\n{}", ret_msg, show_key(store, parts[1]));
             }
-            return Some(show_store(store));
+            ret_msg = format!("{}\n{}", ret_msg, show_store(store));
         } else if parts[0] == "DEL" {
             if parts.len() == 2 {
                 delete_key(store, parts[1]);
+                ret_msg = format!("{}\nkey {} removed", ret_msg, parts[1]);
+                continue;
             }
-            delete_from_list(store, parts[1], parts[2]);
+
+            if let Ok(index) = parts[2].parse::<usize>() {
+                delete_from_list(store, parts[1], index);
+                ret_msg = format!("{}\nkey {} updated", ret_msg, parts[1]);
+                continue;
+            }
+
+            ret_msg = format!("{}\nInvalid Key: {}", ret_msg, parts[1]);
+        } else if parts[0] == "HELP" {
+            return Some(String::from(
+                "Valid commands: ADD, DEL, SHOW, HELP
+
+ADD K V - set key K to value V. if K holds a list, append the value
+ADD K - set key K to True
+ADD K LIST - Set key K to an empty array
+SHOW - Show the contents of the store
+SHOW K - Show the value of key K
+DEL K - Delete key K
+DEL K I - if key K contains a list, remove element at index I
+",
+            ));
         } else {
-            return Some(String::from("Unknown command: ") + parts[0]);
+            ret_msg = format!("{}\nIUnknown command: {}", ret_msg, parts[1]);
         }
     }
-    None
+    return Some(ret_msg.trim().to_owned());
 }
