@@ -22,7 +22,7 @@ impl Display for Datum {
 
 impl Datum {
     pub fn from(raw: &str) -> Self {
-        if raw == "" {
+        if raw.is_empty() {
             return Datum::Bool(true);
         }
         if raw == "LIST" {
