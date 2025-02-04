@@ -118,12 +118,12 @@ DEL K I - if key K contains a list, remove element at index I
     return Some(ret_msg.trim().to_owned());
 }
 
-pub fn update_screen(store: &HashMap<String, Datum>) -> String {
+pub fn update_screen(store: &mut HashMap<String, Datum>) -> String {
     let (cols, rows) = crossterm::terminal::size().unwrap();
     let msg_len = cols / 2;
 
     let mut screen = String::new();
-    screen += show_store(store, rows);
+    screen += &show_store(store, rows.into());
 
     return screen;
 }
