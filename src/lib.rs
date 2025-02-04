@@ -5,6 +5,8 @@ pub mod datum;
 use crate::datum::Datum;
 use std::collections::HashMap;
 
+use crossterm::style::Stylize;
+
 // ADD K V (set k's value to v. If k has a list as it's value, append it)
 // ADD K (set v to True)
 // ADD K LIST (create an empty list as the value)
@@ -17,13 +19,18 @@ fn add_to_store(store: &mut HashMap<String, Datum>, key: &str, value: &str) {
 }
 
 // SHOW (print the whole store)
-fn show_store(store: &mut HashMap<String, Datum>) -> String {
+fn show_store(store: &mut HashMap<String, Datum>, len: usize) -> String {
     let mut ret = String::new();
 
     store.iter_mut().for_each(|(key, value)| {
         ret += key;
         ret += ": ";
-        ret += &value.to_string().clone();
+        let mut rhs = value.to_string().clone();
+        if len > 0 {
+            rhs = rhs[0..len].to_string();
+        }
+
+        ret += &rhs;
         ret += "\n";
     });
 
@@ -76,7 +83,7 @@ pub fn parse_input(store: &mut HashMap<String, Datum>, input: String) -> Option<
             if parts.len() > 2 {
                 ret_msg = format!("{}\n{}", ret_msg, show_key(store, parts[1]));
             }
-            ret_msg = format!("{}\n{}", ret_msg, show_store(store));
+            ret_msg = format!("{}\n{}", ret_msg, show_store(store, 0));
         } else if parts[0] == "DEL" {
             if parts.len() == 2 {
                 delete_key(store, parts[1]);
@@ -109,4 +116,14 @@ DEL K I - if key K contains a list, remove element at index I
         }
     }
     return Some(ret_msg.trim().to_owned());
+}
+
+pub fn update_screen(store: &HashMap<String, Datum>) -> String {
+    let (cols, rows) = crossterm::terminal::size().unwrap();
+    let msg_len = cols / 2;
+
+    let mut screen = String::new();
+    screen += show_store(store, rows);
+
+    return screen;
 }
