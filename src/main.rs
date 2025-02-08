@@ -22,7 +22,7 @@ fn main() -> io::Result<()> {
 
     loop {
         let listener = TcpListener::bind("127.0.0.1:9876")?;
-        rstore::update_screen();
+        rstore::update_screen(&mut store);
 
         for stream_result in listener.incoming() {
             let mut stream = stream_result.unwrap();

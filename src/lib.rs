@@ -27,7 +27,8 @@ fn show_store(store: &mut HashMap<String, Datum>, len: usize) -> String {
         ret += ": ";
         let mut rhs = value.to_string().clone();
         if len > 0 {
-            rhs = rhs[0..len].to_string();
+            // rhs = rhs[0..len].to_string();
+            rhs = rhs.chars().take(len).collect();
         }
 
         ret += &rhs;
@@ -126,4 +127,47 @@ pub fn update_screen(store: &mut HashMap<String, Datum>) -> String {
     screen += &show_store(store, rows.into());
 
     return screen;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_add_to_store() {
+        let mut store = HashMap::new();
+        add_to_store(&mut store, "Foo", "Bar");
+        assert_eq!(store.get("Foo"), Some(&Datum::Text(String::from("Bar"))), "{:?}", store);
+
+        add_to_store(&mut store, "A bool", "");
+        assert!(store.get("A bool") == Some(&Datum::Bool(true)));
+
+        add_to_store(&mut store, "lst", "LIST");
+        assert!(store.get("lst") == Some(&Datum::List(Vec::new())));
+    }
+
+    #[test]
+    fn test_show_store() {
+        let mut store = HashMap::new();
+        add_to_store(&mut store, "Foo", "Bar");
+        add_to_store(&mut store, "A bool", "");
+        add_to_store(&mut store, "lst", "LIST");
+
+        // TODO: There's no way to define the order of the map currentl
+        let expected = String::from("Foo: \"Bar\"\\nA bool: true\\nlst: []\\n");
+        assert_eq!(show_store(&mut store, 69), expected);
+    }
+
+    // #[test]
+    // fn test_show_key() {}
+    //
+    // #[test]
+    // fn test_delete_from_list() {}
+    //
+    // #[test]
+    // fn test_delete_key() {}
+    //
+    // #[test]
+    // fn test_update_screen() {}
+
 }
