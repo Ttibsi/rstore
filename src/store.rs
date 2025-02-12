@@ -1,8 +1,8 @@
 use crate::datum::Datum;
 
 pub struct Store {
-    data: Vec<(String, Datum)>,
-    pub cmds: Vec<String>,
+    pub(crate) data: Vec<(String, Datum)>,
+    pub(crate) cmds: Vec<String>,
 }
 
 impl Store {

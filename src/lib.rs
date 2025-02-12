@@ -18,16 +18,14 @@ pub fn update_screen(store: &Store) -> String {
             + "\x1B[27m",
     );
     screen += "\n"; // In theory, shouldn't be needed
+    screen += &"\u2513".repeat(cols);
 
-    for idx in 0..rows - 1 {
-        screen += &store.cmds[idx as usize]
-            .chars()
-            .take((msg_len + 2).into())
-            .collect::<String>();
-        screen += "|";
+    let cmds = store.cmds.iter().rev().take((rows - 2) / 2);
+    let contents = store.data.iter().rev().take((rows - 2) / 2);
 
-        screen += "\n";
-    }
+    for elem in cmds { store += format!("{:?}\n", elem); }
+    screen += &"\u2513".repeat(cols);
+    for elem in contents { store += format!("{:?}\n", elem); }
 
     return screen;
 }
