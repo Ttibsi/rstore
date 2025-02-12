@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::io;
 use std::io::Read;
 use std::io::Write;
@@ -18,7 +17,7 @@ fn main() -> io::Result<()> {
     execute!(io::stdout(), terminal::EnterAlternateScreen)?;
     stdout.execute(terminal::Clear(terminal::ClearType::All))?;
 
-    let mut store = HashMap::new();
+    let mut store = rstore::store::Store::new();
 
     loop {
         let listener = TcpListener::bind("127.0.0.1:9876")?;
@@ -28,10 +27,8 @@ fn main() -> io::Result<()> {
             let mut stream = stream_result.unwrap();
             let mut buffer: [u8; 1024] = [0; 1024];
             let size = stream.read(&mut buffer).unwrap();
-            let msg = rstore::parse_input(
-                &mut store,
-                String::from_utf8(buffer[0..size].to_vec()).unwrap().clone(),
-            );
+            let msg =
+                store.parse_input(String::from_utf8(buffer[0..size].to_vec()).unwrap().clone());
 
             if let Some(message) = msg {
                 let _ = stream.write(&message.into_bytes());
