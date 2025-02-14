@@ -6,7 +6,7 @@ use std::time;
 
 use crossterm::{
     cursor,
-    event::{self, poll, read, KeyCode, KeyEvent, KeyModifiers},
+    event::{self, poll, read, KeyCode, KeyModifiers},
     execute, style, terminal, ExecutableCommand,
 };
 
@@ -20,7 +20,7 @@ fn main() -> io::Result<()> {
 
     let mut store = rstore::store::Store::new();
 
-    loop {
+    'eventloop: loop {
         let listener = TcpListener::bind("127.0.0.1:9876")?;
         stdout.execute(cursor::MoveTo(0, 0))?;
         stdout.execute(style::Print(rstore::update_screen(&mut store)))?;
@@ -35,22 +35,24 @@ fn main() -> io::Result<()> {
             if let Some(message) = msg {
                 let _ = stream.write(&message.into_bytes());
             }
-        }
 
-        let ctrl_c = KeyEvent::new(KeyCode::Char('c'), KeyModifiers::CONTROL);
-        if poll(time::Duration::from_millis(100))? {
-            match read()? {
-                event::Event::Key(key_event) => {
-                    if key_event == ctrl_c {
-                        break;
+            if poll(time::Duration::from_millis(100))? {
+                match read()? {
+                    event::Event::Key(key_event) => {
+                        stdout.execute(style::Print(format!("{:?}", key_event)))?;
+                        if key_event.code == KeyCode::Char('c')
+                            && key_event.modifiers.contains(KeyModifiers::CONTROL)
+                        {
+                            break 'eventloop;
+                        }
                     }
+                    _ => continue,
                 }
-                _ => continue,
             }
         }
     }
 
-    execute!(io::stdout(), terminal::EnterAlternateScreen)?;
+    execute!(io::stdout(), terminal::LeaveAlternateScreen)?;
     let _ = terminal::disable_raw_mode();
     Ok(())
 }

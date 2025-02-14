@@ -40,6 +40,22 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_datum_display() {
+        assert_eq!(Datum::Bool(true).to_string(), "true");
+        assert_eq!(Datum::Text("hello".to_string()).to_string(), "\"hello\"");
+        assert_eq!(Datum::Num(42).to_string(), "42");
+        assert_eq!(
+            Datum::List(vec![
+                Datum::Bool(true),
+                Datum::Text("test".to_string()),
+                Datum::Num(123)
+            ])
+            .to_string(),
+            "[Bool(true), Text(\"test\"), Num(123)]"
+        );
+    }
+
+    #[test]
     fn test_from() {
         let bool_value = Datum::from("");
         let str_value = Datum::from("Hello");

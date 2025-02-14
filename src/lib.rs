@@ -17,9 +17,11 @@ pub fn update_screen(store: &Store) -> String {
             + &" ".repeat(msg_len.into())
             + "\x1B[27m",
     );
+
     if cols % 2 == 1 {
         screen += " ";
     }
+    screen += "\r\n";
 
     let row_count: usize = ((rows - 2) / 2).into();
     let cmds = store
@@ -44,6 +46,34 @@ pub fn update_screen(store: &Store) -> String {
     }
 
     return screen;
+}
+
+#[cfg(test)]
+mod tests {
+    use datum::Datum;
+
+    use super::*;
+
+    #[test]
+    fn test_update_screen() {
+        let my_store = Store {
+            data: vec![
+                ("Foo".to_string(), Datum::Bool(true)),
+                ("Bar".to_string(), Datum::Num(69)),
+            ],
+            cmds: vec!["Foo".to_string(), "Bar".to_string(), "Baz".to_string()],
+        };
+
+        let rendered_lines: Vec<String> = update_screen(&my_store)
+            .split("\n")
+            .map(String::from)
+            .collect();
+
+        assert!(rendered_lines[0].contains("rstore"));
+        assert!(rendered_lines[1].contains("Baz"));
+        assert!(rendered_lines[2].contains("Bar"));
+        assert!(rendered_lines[3].contains("Foo"));
+    }
 }
 
 // #[cfg(test)]
