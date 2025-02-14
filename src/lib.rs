@@ -7,7 +7,7 @@ use crate::store::Store;
 
 pub fn update_screen(store: &Store) -> String {
     let (cols, rows) = crossterm::terminal::size().unwrap();
-    let msg_len = (cols / 2) - 3;
+    let msg_len = (cols - 6) / 2;
 
     let mut screen = String::new();
     screen += &String::from(
@@ -17,15 +17,31 @@ pub fn update_screen(store: &Store) -> String {
             + &" ".repeat(msg_len.into())
             + "\x1B[27m",
     );
-    screen += "\n"; // In theory, shouldn't be needed
-    screen += &"\u2513".repeat(cols);
+    if cols % 2 == 1 {
+        screen += " ";
+    }
 
-    let cmds = store.cmds.iter().rev().take((rows - 2) / 2);
-    let contents = store.data.iter().rev().take((rows - 2) / 2);
+    let row_count: usize = ((rows - 2) / 2).into();
+    let cmds = store
+        .cmds
+        .iter()
+        .rev()
+        .map(|s| s.as_str())
+        .chain(std::iter::repeat(""))
+        .take(row_count);
+    let contents = store.data.iter().rev().take(row_count);
 
-    for elem in cmds { store += format!("{:?}\n", elem); }
-    screen += &"\u2513".repeat(cols);
-    for elem in contents { store += format!("{:?}\n", elem); }
+    for elem in cmds {
+        if elem.is_empty() {
+            screen += "\r\n";
+        } else {
+            screen += &format!("{:?}\r\n", elem);
+        }
+    }
+    screen += &"\u{2500}".repeat(cols.into());
+    for elem in contents {
+        screen += &format!("{:?}\r\n", elem);
+    }
 
     return screen;
 }
