@@ -29,7 +29,7 @@ impl Store {
         let mut ret = String::new();
 
         for (key, value) in &self.data {
-            ret.push_str(&key);
+            ret.push_str(key);
             ret += ": ";
             let mut rhs = value.to_string().clone();
             if len > 0 {

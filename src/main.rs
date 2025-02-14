@@ -23,7 +23,7 @@ fn main() -> io::Result<()> {
     'eventloop: loop {
         let listener = TcpListener::bind("127.0.0.1:9876")?;
         stdout.execute(cursor::MoveTo(0, 0))?;
-        stdout.execute(style::Print(rstore::update_screen(&mut store)))?;
+        stdout.execute(style::Print(rstore::update_screen(&store)))?;
 
         for stream_result in listener.incoming() {
             let mut stream = stream_result.unwrap();

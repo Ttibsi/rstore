@@ -10,13 +10,11 @@ pub fn update_screen(store: &Store) -> String {
     let msg_len = (cols - 6) / 2;
 
     let mut screen = String::new();
-    screen += &String::from(
-        "\x1B[7m".to_owned()
-            + &" ".repeat(msg_len.into())
-            + "rstore"
-            + &" ".repeat(msg_len.into())
-            + "\x1B[27m",
-    );
+    screen += &("\x1B[7m".to_owned()
+        + &" ".repeat(msg_len.into())
+        + "rstore"
+        + &" ".repeat(msg_len.into())
+        + "\x1B[27m");
 
     if cols % 2 == 1 {
         screen += " ";
