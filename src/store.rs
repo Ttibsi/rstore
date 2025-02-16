@@ -5,6 +5,12 @@ pub struct Store {
     pub(crate) cmds: Vec<String>,
 }
 
+impl Default for Store {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Store {
     pub fn new() -> Self {
         return Self {
@@ -17,8 +23,17 @@ impl Store {
     // ADD K (set v to True)
     // ADD K LIST (create an empty list as the value)
     pub fn add_to_store(&mut self, key: &str, value: &str) {
+        // if key already exists and value is not a List, replace it's value
+        // if key already exists and it's value is a list, append value to the list
+        // otherwise, create a new key and set it's value to value
+        // if let Some((x, _)) = my_vec.iter_mut().find(|(x, _)| *x == value_to_find) {
+        //     *x = value;
+        // }
+
         if let Some((_, Datum::List(contents))) = self.data.iter_mut().find(|(k, _)| k == key) {
             contents.push(Datum::from(value));
+        } else if let Some((_x, y)) = self.data.iter_mut().find(|(x, _y)| *x == key) {
+            *y = Datum::from(value);
         } else {
             self.data.push((key.to_string(), Datum::from(value)));
         }
@@ -95,8 +110,9 @@ impl Store {
 
                 ret_msg = format!("{}\n{} Updated", ret_msg, parts[1]);
             } else if parts[0] == "SHOW" {
-                if parts.len() > 2 {
+                if parts.len() > 1 {
                     ret_msg = format!("{}\n{}", ret_msg, self.show_key(parts[1]));
+                    continue;
                 }
                 ret_msg = format!("{}\n{}", ret_msg, self.show_store(0));
             } else if parts[0] == "DEL" {
@@ -130,15 +146,157 @@ impl Store {
             } else if parts[0] == "EXPORT" {
                 ret_msg = self.jsonify();
             } else {
-                ret_msg = format!("{}\nIUnknown command: {}", ret_msg, parts[1]);
+                ret_msg = format!("{}\nUnknown command: {}", ret_msg, parts[0]);
             }
         }
         return Some(ret_msg.trim().to_owned());
     }
 }
 
-impl Default for Store {
-    fn default() -> Self {
-        Self::new()
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_default_store() {
+        let store = Store::default();
+        assert_eq!(store.data.len(), 0);
+        assert_eq!(store.cmds.len(), 0);
+    }
+
+    #[test]
+    fn test_new_store() {
+        let store = Store::new();
+        assert_eq!(store.data.len(), 0);
+        assert_eq!(store.cmds.len(), 0);
+    }
+
+    #[test]
+    fn test_add_to_store() {
+        let mut store = Store::new();
+        store.add_to_store("key1", "LIST");
+        store.add_to_store("key1", "value1");
+        assert_eq!(store.data.len(), 1);
+        assert_eq!(store.data[0].0, "key1");
+        assert_eq!(store.data[0].1, Datum::List(vec![Datum::from("value1")]));
+
+        store.add_to_store("key1", "value2");
+        assert_eq!(store.data.len(), 1);
+        assert_eq!(store.data[0].0, "key1");
+        assert_eq!(
+            store.data[0].1,
+            Datum::List(vec![Datum::from("value1"), Datum::from("value2")])
+        );
+    }
+
+    #[test]
+    fn test_show_store() {
+        let mut store = Store::new();
+        store.add_to_store("key1", "value1");
+        store.add_to_store("key2", "value2");
+        store.add_to_store("key3", "value3");
+
+        let output = store.show_store(0);
+        assert_eq!(
+            output,
+            "key1: \"value1\"\nkey2: \"value2\"\nkey3: \"value3\"\n"
+        );
+
+        let output = store.show_store(3);
+        assert_eq!(output, "key1: \"va\nkey2: \"va\nkey3: \"va\n");
+    }
+
+    #[test]
+    fn test_show_key() {
+        let mut store = Store::new();
+        store.add_to_store("key1", "value1");
+        store.add_to_store("key2", "value2");
+
+        let output = store.show_key("key1");
+        assert_eq!(output, "key1: \"value1\"");
+
+        let output = store.show_key("key3");
+        assert_eq!(output, "");
+    }
+
+    #[test]
+    fn test_delete_key() {
+        let mut store = Store::new();
+        store.add_to_store("key1", "value1");
+        store.add_to_store("key2", "value2");
+
+        store.delete_key("key1");
+        assert_eq!(store.data.len(), 1);
+        assert_eq!(store.data[0].0, "key2");
+
+        store.delete_key("key3");
+        assert_eq!(store.data.len(), 1);
+    }
+
+    #[test]
+    fn test_delete_from_list() {
+        let mut store = Store::new();
+        store.add_to_store("key1", "LIST");
+        store.add_to_store("key1", "value1");
+        store.add_to_store("key1", "value2");
+        store.add_to_store("key1", "value3");
+
+        store.delete_from_list("key1", 1);
+        assert_eq!(
+            store.data[0].1,
+            Datum::List(vec![Datum::from("value1"), Datum::from("value3")])
+        );
+
+        store.delete_from_list("key1", 10);
+        assert_eq!(
+            store.data[0].1,
+            Datum::List(vec![Datum::from("value1"), Datum::from("value3")])
+        );
+    }
+    #[test]
+    fn test_jsonify() {
+        let mut store = Store::new();
+        store.add_to_store("key1", "value1");
+        store.add_to_store("key2", "value2");
+
+        let json_output = store.jsonify();
+        assert_eq!(
+            json_output,
+            r#"[["key1",{"Text":"value1"}],["key2",{"Text":"value2"}]]"#
+        );
+    }
+
+    #[test]
+    fn test_parse_input() {
+        let mut store = Store::new();
+
+        let input = "ADD key1 value1 | ADD key2 value2";
+        let output = store.parse_input(input.to_string()).unwrap();
+        assert_eq!(output, "key1 Updated\nkey2 Updated");
+
+        let input = "SHOW";
+        let output = store.parse_input(input.to_string()).unwrap();
+        assert!(output.contains("key1: \"value1\""));
+        assert!(output.contains("key2: \"value2\""));
+
+        let input = "SHOW key1";
+        let output = store.parse_input(input.to_string()).unwrap();
+        assert_eq!(output, "key1: \"value1\"");
+
+        let input = "DEL key1";
+        let output = store.parse_input(input.to_string()).unwrap();
+        assert_eq!(output, "key key1 removed");
+
+        let input = "DEL key2 1";
+        let output = store.parse_input(input.to_string()).unwrap();
+        assert_eq!(output, "key key2 updated");
+
+        let input = "INVALID_COMMAND";
+        let output = store.parse_input(input.to_string()).unwrap();
+        assert_eq!(output, "Unknown command: INVALID_COMMAND");
+
+        let input = "HELP";
+        let output = store.parse_input(input.to_string()).unwrap();
+        assert!(output.contains("Valid commands: ADD, DEL, SHOW, HELP, EXPORT"));
     }
 }
