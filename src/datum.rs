@@ -1,133 +1,39 @@
-#[derive(Clone, Eq, PartialEq, Debug)]
+use std::fmt::Display;
+
+use itertools::Itertools;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum Datum {
-    Null,
+    Bool(bool),
     Text(String),
     Num(i64),
     List(Vec<Datum>),
-    Pair { left: Box<Datum>, right: Box<Datum> },
+}
+
+impl Display for Datum {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Datum::Bool(x) => write!(f, "{:?}", x),
+            Datum::Text(x) => write!(f, "{:?}", x),
+            Datum::Num(x) => write!(f, "{:?}", x),
+            Datum::List(vec) => write!(f, "[{:?}]", vec.iter().format(", ")),
+        }
+    }
 }
 
 impl Datum {
-    pub fn new() -> Self {
-        Datum::List(Vec::new())
-    }
-
-    pub fn parse(value: &str) -> Self {
-        if value == "None" {
-            return Datum::Null;
+    pub fn from(raw: &str) -> Self {
+        if raw.is_empty() {
+            return Datum::Bool(true);
         }
-        if value == "Null" {
-            return Datum::Null;
+        if raw == "LIST" {
+            return Datum::List(Vec::new());
         }
-        if let Ok(ret) = value.parse::<i64>() {
-            return Datum::Num(ret);
+        if raw.parse::<f64>().is_ok() {
+            return Datum::Num(raw.parse::<i64>().unwrap_or(0));
         }
-
-        // Create List
-        let mut chars = value.chars();
-        if chars.next().unwrap() == '[' && chars.next_back().unwrap() == ']' {
-            let tokens = value[1..value.len() - 1].split(",").collect::<Vec<&str>>();
-            let mut lst: Vec<Self> = Vec::new();
-            for tok in tokens {
-                lst.push(Datum::parse(tok));
-            }
-
-            return Datum::List(lst);
-        }
-
-        // Create Pair
-        let parts: Vec<&str> = value.split(":").collect();
-        if parts.len() == 2 {
-            return Datum::Pair {
-                left: Box::new(Datum::parse(parts[0])),
-                right: Box::new(Datum::parse(parts[1])),
-            };
-        }
-
-        Datum::Text(value.to_string())
-    }
-
-    pub fn insert(&mut self, value: &str) {
-        if value.contains("::") {
-            let (key, rest) = value.split_once("::").unwrap();
-
-            match self {
-                Datum::List(vec) => vec[key.parse::<usize>().unwrap()].insert(rest),
-                Datum::Pair { left, right } => {
-                    if **left == Datum::parse(key) {
-                        right.insert(rest);
-                    }
-                }
-                _ => (),
-            }
-        } else {
-            match self {
-                Datum::List(vec) => vec.push(Datum::parse(value)),
-                Datum::Pair { left: _, right } => *right = Box::new(Datum::parse(value)),
-                _ => (),
-            }
-        }
-    }
-
-    pub fn delete(&mut self, value: &str) {
-        if value.contains("::") {
-            let (key, rest) = value.split_once("::").unwrap();
-
-            match self {
-                Datum::List(vec) => vec[key.parse::<usize>().unwrap()].delete(rest),
-                Datum::Pair { left, right } => {
-                    if **left == Datum::parse(key) {
-                        right.delete(rest);
-                    }
-                }
-                _ => (),
-            }
-        } else {
-            match self {
-                Datum::List(vec) => _ = vec.remove(value.parse::<usize>().unwrap()),
-                Datum::Pair { left: _, right } => *right = Box::new(Datum::Null),
-                _ => (),
-            };
-        }
-    }
-
-    pub fn view(&self, indent: usize) -> String {
-        let tab = " ".repeat(indent * 4);
-
-        match self {
-            Datum::Null => format!("{}Null", tab).to_string(),
-            Datum::Text(elem) => format!("{}{}", tab, elem).to_string(),
-            Datum::Num(elem) => format!("{}{}", tab, elem).to_string(),
-            Datum::List(vec) => {
-                let mut str = format!("{}[\n", tab);
-                for (idx, elem) in vec.iter().enumerate() {
-                    str += &elem.view(indent + 1);
-
-                    if idx != vec.len() - 1 {
-                        str += ",\n";
-                    } else {
-                        str += "\n";
-                    }
-                }
-                str += &format!("{}]", tab);
-                str
-            }
-            Datum::Pair { left, right } => {
-                let mut str = format!("{}(\n", tab);
-                str += &left.view(indent + 1);
-                str += ",\n";
-                str += &right.view(indent + 1);
-                str += &format!("\n{})", tab);
-
-                str
-            }
-        }
-    }
-}
-
-impl Default for Datum {
-    fn default() -> Self {
-        Self::new()
+        return Datum::Text(raw.to_string());
     }
 }
 
@@ -136,39 +42,31 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_insert() {
-        let mut elem = Datum::new();
-        elem.insert("5");
-
-        assert_eq!(elem.view(0), "[\n    5\n]");
+    fn test_datum_display() {
+        assert_eq!(Datum::Bool(true).to_string(), "true");
+        assert_eq!(Datum::Text("hello".to_string()).to_string(), "\"hello\"");
+        assert_eq!(Datum::Num(42).to_string(), "42");
+        assert_eq!(
+            Datum::List(vec![
+                Datum::Bool(true),
+                Datum::Text("test".to_string()),
+                Datum::Num(123)
+            ])
+            .to_string(),
+            "[Bool(true), Text(\"test\"), Num(123)]"
+        );
     }
 
     #[test]
-    fn test_delete() {
-        let mut elem = Datum::new();
-        elem.insert("5");
-        assert_eq!(elem.view(0), "[\n    5\n]");
+    fn test_from() {
+        let bool_value = Datum::from("");
+        let str_value = Datum::from("Hello");
+        let num_value = Datum::from("12");
+        let list_value = Datum::from("LIST");
 
-        elem.delete("0");
-        assert_eq!(elem.view(0), "[\n]");
-    }
-
-    #[test]
-    fn test_view() {
-        let mut elem = Datum::new();
-        assert_eq!(elem.view(0), "[\n]");
-
-        elem.insert("5");
-        assert_eq!(elem.view(0), "[\n    5\n]");
-
-        elem.delete("0");
-        assert_eq!(elem.view(0), "[\n]");
-    }
-
-    #[test]
-    fn test_types_parse_value() {
-        assert_eq!(Datum::parse("None"), Datum::Null);
-        assert_eq!(Datum::parse("1"), Datum::Num(1));
-        assert_eq!(Datum::parse("foo"), Datum::Text("foo".to_string()));
+        assert!(bool_value == Datum::Bool(true));
+        assert!(str_value == Datum::Text(String::from("Hello")));
+        assert!(num_value == Datum::Num(12));
+        assert!(list_value == Datum::List(Vec::new()));
     }
 }
