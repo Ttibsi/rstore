@@ -80,8 +80,7 @@ impl Store {
                 .map(|s| s.trim())
                 .collect();
 
-            println!("{:?}", parts);
-            self.cmds.push(format!("{:?}", parts));
+            self.cmds.push(parts.join(" "));
 
             if parts[0] == "ADD" {
                 if parts.len() == 2 {
