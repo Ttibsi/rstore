@@ -4,6 +4,9 @@ use std::io::Write;
 use std::net::TcpListener;
 use std::time;
 
+use std::sync::{Arc, Mutex};
+use std::thread;
+
 use crossterm::{
     cursor,
     event::{self, poll, read, KeyCode, KeyModifiers},
@@ -18,40 +21,44 @@ fn main() -> io::Result<()> {
     execute!(io::stdout(), terminal::EnterAlternateScreen)?;
     stdout.execute(terminal::Clear(terminal::ClearType::All))?;
 
-    let mut store = rstore::store::Store::new();
+    let store = Arc::new(Mutex::new(rstore::store::Store::new()));
+    let store_clone = Arc::clone(&store);
 
-    'eventloop: loop {
-        let listener = TcpListener::bind("127.0.0.1:9876")?;
-        stdout.execute(cursor::MoveTo(0, 0))?;
-        stdout.execute(style::Print(rstore::update_screen(&store)))?;
-
+    // let socket_thread = thread::spawn(move || {
+    let _ = thread::spawn(move || {
+        let listener = TcpListener::bind("127.0.0.1:9876").unwrap();
         for stream_result in listener.incoming() {
             let mut stream = stream_result.unwrap();
             let mut buffer: [u8; 1024] = [0; 1024];
             let size = stream.read(&mut buffer).unwrap();
-            let msg =
-                store.parse_input(String::from_utf8(buffer[0..size].to_vec()).unwrap().clone());
+            let msg = {
+                let mut store = store_clone.lock().unwrap();
+                store.parse_input(String::from_utf8(buffer[0..size].to_vec()).unwrap().clone())
+            };
 
             if let Some(message) = msg {
                 let _ = stream.write(&message.into_bytes());
             }
+        }
+    });
 
-            if poll(time::Duration::from_millis(100))? {
-                match read()? {
-                    event::Event::Key(key_event) => {
-                        stdout.execute(style::Print(format!("{:?}", key_event)))?;
-                        if key_event.code == KeyCode::Char('c')
-                            && key_event.modifiers.contains(KeyModifiers::CONTROL)
-                        {
-                            break 'eventloop;
-                        }
+    'eventloop: loop {
+        stdout.execute(cursor::MoveTo(0, 0))?;
+        stdout.execute(style::Print(rstore::update_screen(&*store.lock().unwrap())))?;
+
+        if poll(time::Duration::from_millis(100))? {
+            match read()? {
+                event::Event::Key(key_event) => {
+                    if key_event.code == KeyCode::Char('q') {
+                        break 'eventloop;
                     }
-                    _ => continue,
                 }
+                _ => continue,
             }
         }
     }
 
+    // socket_thread.join().unwrap();
     execute!(io::stdout(), terminal::LeaveAlternateScreen)?;
     let _ = terminal::disable_raw_mode();
     Ok(())
