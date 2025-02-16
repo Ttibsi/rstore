@@ -9,7 +9,7 @@ use std::thread;
 
 use crossterm::{
     cursor,
-    event::{self, poll, read, KeyCode, KeyModifiers},
+    event::{self, poll, read, KeyCode},
     execute, style, terminal, ExecutableCommand,
 };
 
@@ -44,7 +44,7 @@ fn main() -> io::Result<()> {
 
     'eventloop: loop {
         stdout.execute(cursor::MoveTo(0, 0))?;
-        stdout.execute(style::Print(rstore::update_screen(&*store.lock().unwrap())))?;
+        stdout.execute(style::Print(rstore::update_screen(&store.lock().unwrap())))?;
 
         if poll(time::Duration::from_millis(100))? {
             match read()? {
