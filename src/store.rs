@@ -69,6 +69,10 @@ impl Store {
         }
     }
 
+    pub fn jsonify(&self) -> String {
+        serde_json::to_string(&self.data).unwrap()
+    }
+
     pub fn parse_input(&mut self, input: String) -> Option<String> {
         let cmds: Vec<&str> = input.split("|").collect();
         let mut ret_msg = String::new();
@@ -111,7 +115,7 @@ impl Store {
                 ret_msg = format!("{}\nInvalid Key: {}", ret_msg, parts[1]);
             } else if parts[0] == "HELP" {
                 return Some(String::from(
-                    "Valid commands: ADD, DEL, SHOW, HELP
+                    "Valid commands: ADD, DEL, SHOW, HELP, EXPORT
 
     ADD K V - set key K to value V. if K holds a list, append the value
     ADD K - set key K to True
@@ -120,8 +124,11 @@ impl Store {
     SHOW K - Show the value of key K
     DEL K - Delete key K
     DEL K I - if key K contains a list, remove element at index I
+    EXPORT - print a JSON string form of the current contents to stdout.
     ",
                 ));
+            } else if parts[0] == "EXPORT" {
+                ret_msg = self.jsonify();
             } else {
                 ret_msg = format!("{}\nIUnknown command: {}", ret_msg, parts[1]);
             }

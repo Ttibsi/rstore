@@ -1,7 +1,9 @@
-use itertools::Itertools;
 use std::fmt::Display;
 
-#[derive(Debug, PartialEq)]
+use itertools::Itertools;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum Datum {
     Bool(bool),
     Text(String),

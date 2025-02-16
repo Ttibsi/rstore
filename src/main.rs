@@ -14,7 +14,6 @@ use crossterm::{
 };
 
 // TODO: unit tests
-// TODO: Add  tui on server to view the store
 fn main() -> io::Result<()> {
     let mut stdout = io::stdout();
     let _ = terminal::enable_raw_mode();
@@ -36,7 +35,8 @@ fn main() -> io::Result<()> {
                 store.parse_input(String::from_utf8(buffer[0..size].to_vec()).unwrap().clone())
             };
 
-            if let Some(message) = msg {
+            if let Some(mut message) = msg {
+                message += "\n";
                 let _ = stream.write(&message.into_bytes());
             }
         }
