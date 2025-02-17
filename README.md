@@ -3,6 +3,7 @@
 A simple key-value store inspired by redis, written as an experiment.
 Featuring JSON exporting and a server TUI to see the current contents of the data store
 
+![](https://github.com/user-attachments/assets/4925208e-0a17-4853-9516-22a4623cfd87)
 
 ### How to use
 Use `netcat` to push commands to the running server, ex:
