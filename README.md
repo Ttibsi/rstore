@@ -1,20 +1,25 @@
 # rstore
 
-A simple key-value store that probably doesn't work great, but kinda does.
-It's mostly an experiment.
+A simple key-value store inspired by redis, written as an experiment.
+Featuring JSON exporting and a server TUI to see the current contents of the data store
+
 
 ### How to use
 Use `netcat` to push commands to the running server, ex:
 
 ```console
-$ echo -n "PUSH foo:bar|VIEW|REMOVE 0|VIEW" | netcat localhost 9876
+$ echo -n "ADD names LIST|ADD names ttibsi|SHOW|REM names 0|SHOW" | netcat localhost 9876
 ```
 
-Valid commands:
-* PUSH - Push an item into the current structure
-* REMOVE - Remove an item from the current data store
-* VIEW - Print out the current stored data structure
-* ECHO - print out the parts of the command entered, used for debugging
+Valid commands: ADD, DEL, SHOW, HELP, EXPORT
 
-Any printing commands will show on the server, not return over the network
+* ADD K V - set key K to value V. if K holds a list, append the value
+* ADD K - set key K to True
+* ADD K LIST - Set key K to an empty array
+* SHOW - Show the contents of the store
+* SHOW K - Show the value of key K
+* DEL K - Delete key K
+* DEL K I - if key K contains a list, remove element at index I
+* EXPORT - print a JSON string form of the current contents to stdout.
+
 Commands can be chained with a pipe character `|`
