@@ -13,7 +13,6 @@ use crossterm::{
     execute, style, terminal, ExecutableCommand,
 };
 
-// TODO: unit tests
 fn main() -> io::Result<()> {
     let mut stdout = io::stdout();
     let _ = terminal::enable_raw_mode();
