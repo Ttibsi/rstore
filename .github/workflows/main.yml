@@ -20,3 +20,12 @@ jobs:
       - uses: clechasseur/rs-clippy-check@v4
         with:
           args: --all-features
+  unit_test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: nightly
+      - run: cargo test --verbose
+
