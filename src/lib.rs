@@ -6,7 +6,8 @@ pub mod store;
 use crate::store::Store;
 
 pub fn update_screen(store: &Store) -> String {
-    let (cols, rows) = crossterm::terminal::size().unwrap();
+    // Setting default values in unwrap_or for CI unit tests
+    let (cols, rows) = crossterm::terminal::size().unwrap_or((24, 80));
     let msg_len = (cols - 6) / 2;
 
     let mut screen = format!(
