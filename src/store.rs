@@ -40,7 +40,7 @@ impl Store {
     }
 
     // SHOW (print the whole store)
-    pub fn show_store(&mut self, len: usize) -> String {
+    pub fn show_store(&self, len: usize) -> String {
         let mut ret = String::new();
 
         for (key, value) in &self.data {
@@ -60,7 +60,7 @@ impl Store {
     }
 
     // SHOW K (Show the value(s) of k)
-    pub fn show_key(&mut self, key: &str) -> String {
+    pub fn show_key(&self, key: &str) -> String {
         if let Some((_, value)) = self.data.iter().find(|(k, _)| k == key) {
             return format!("{}: {}", key, value);
         }
