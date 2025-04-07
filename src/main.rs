@@ -1,3 +1,4 @@
+use std::env;
 use std::io;
 use std::io::Read;
 use std::io::Write;
@@ -13,8 +14,11 @@ use crossterm::{
     execute, style, terminal, ExecutableCommand,
 };
 
-// TODO: unit tests
 fn main() -> io::Result<()> {
+    let _ = env::args().next_back();
+    let ip = env::args().next_back().unwrap_or("127.0.0.1".to_owned());
+    let port = env::args().next_back().unwrap_or("9876".to_owned());
+
     let mut stdout = io::stdout();
     let _ = terminal::enable_raw_mode();
     execute!(io::stdout(), terminal::EnterAlternateScreen)?;
@@ -25,7 +29,7 @@ fn main() -> io::Result<()> {
 
     // let socket_thread = thread::spawn(move || {
     let _ = thread::spawn(move || {
-        let listener = TcpListener::bind("127.0.0.1:9876").unwrap();
+        let listener = TcpListener::bind(format!("{}:{}", ip, port)).unwrap();
         for stream_result in listener.incoming() {
             let mut stream = stream_result.unwrap();
             let mut buffer: [u8; 1024] = [0; 1024];
@@ -42,7 +46,7 @@ fn main() -> io::Result<()> {
         }
     });
 
-    'eventloop: loop {
+    loop {
         stdout.execute(cursor::MoveTo(0, 0))?;
         stdout.execute(terminal::Clear(terminal::ClearType::All))?;
         stdout.execute(style::Print(rstore::update_screen(&store.lock().unwrap())))?;
@@ -51,7 +55,7 @@ fn main() -> io::Result<()> {
             match read()? {
                 event::Event::Key(key_event) => {
                     if key_event.code == KeyCode::Char('q') {
-                        break 'eventloop;
+                        break;
                     }
                 }
                 _ => continue,

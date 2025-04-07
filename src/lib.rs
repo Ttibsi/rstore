@@ -6,20 +6,16 @@ pub mod store;
 use crate::store::Store;
 
 pub fn update_screen(store: &Store) -> String {
-    let (cols, rows) = crossterm::terminal::size().unwrap();
+    // Setting default values in unwrap_or for CI unit tests
+    let (cols, rows) = crossterm::terminal::size().unwrap_or((24, 80));
     let msg_len = (cols - 6) / 2;
 
-    let mut screen = String::new();
-    screen += &("\x1B[7m".to_owned()
-        + &" ".repeat(msg_len.into())
-        + "rstore"
-        + &" ".repeat(msg_len.into())
-        + "\x1B[27m");
-
-    if cols % 2 == 1 {
-        screen += " ";
-    }
-    screen += "\r\n";
+    let mut screen = format!(
+        "\x1B[7m{}rstore{}{}\x1B[27m\r\n",
+        " ".repeat(msg_len.into()),
+        " ".repeat(msg_len.into()),
+        if cols % 2 == 1 { " " } else { "" }
+    );
 
     let row_count: usize = ((rows - 2) / 2).into();
     let cmds = store
