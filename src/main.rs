@@ -1,3 +1,4 @@
+use std::env;
 use std::io;
 use std::io::Read;
 use std::io::Write;
@@ -14,6 +15,10 @@ use crossterm::{
 };
 
 fn main() -> io::Result<()> {
+    let _ = env::args().next_back();
+    let ip = env::args().next_back().unwrap_or("127.0.0.1".to_owned());
+    let port = env::args().next_back().unwrap_or("9876".to_owned());
+
     let mut stdout = io::stdout();
     let _ = terminal::enable_raw_mode();
     execute!(io::stdout(), terminal::EnterAlternateScreen)?;
@@ -24,7 +29,7 @@ fn main() -> io::Result<()> {
 
     // let socket_thread = thread::spawn(move || {
     let _ = thread::spawn(move || {
-        let listener = TcpListener::bind("127.0.0.1:9876").unwrap();
+        let listener = TcpListener::bind(format!("{}:{}", ip, port)).unwrap();
         for stream_result in listener.incoming() {
             let mut stream = stream_result.unwrap();
             let mut buffer: [u8; 1024] = [0; 1024];
