@@ -46,7 +46,7 @@ fn main() -> io::Result<()> {
         }
     });
 
-    'eventloop: loop {
+    loop {
         stdout.execute(cursor::MoveTo(0, 0))?;
         stdout.execute(terminal::Clear(terminal::ClearType::All))?;
         stdout.execute(style::Print(rstore::update_screen(&store.lock().unwrap())))?;
@@ -55,7 +55,7 @@ fn main() -> io::Result<()> {
             match read()? {
                 event::Event::Key(key_event) => {
                     if key_event.code == KeyCode::Char('q') {
-                        break 'eventloop;
+                        break;
                     }
                 }
                 _ => continue,
