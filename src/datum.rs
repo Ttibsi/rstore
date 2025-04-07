@@ -8,6 +8,7 @@ pub enum Datum {
     Bool(bool),
     Text(String),
     Num(i64),
+    Decimal(f64),
     List(Vec<Datum>),
 }
 
@@ -17,6 +18,7 @@ impl Display for Datum {
             Datum::Bool(x) => write!(f, "{:?}", x),
             Datum::Text(x) => write!(f, "{:?}", x),
             Datum::Num(x) => write!(f, "{:?}", x),
+            Datum::Decimal(x) => write!(f, "{:?}", x),
             Datum::List(vec) => write!(f, "[{:?}]", vec.iter().format(", ")),
         }
     }
@@ -30,8 +32,11 @@ impl Datum {
         if raw == "LIST" {
             return Datum::List(Vec::new());
         }
-        if raw.parse::<f64>().is_ok() {
+        if raw.parse::<i64>().is_ok() {
             return Datum::Num(raw.parse::<i64>().unwrap_or(0));
+        }
+        if raw.parse::<f64>().is_ok() {
+            return Datum::Decimal(raw.parse::<f64>().unwrap_or(0.0));
         }
         return Datum::Text(raw.to_string());
     }
@@ -63,10 +68,12 @@ mod tests {
         let str_value = Datum::from("Hello");
         let num_value = Datum::from("12");
         let list_value = Datum::from("LIST");
+        let float_value = Datum::from("3.14");
 
         assert!(bool_value == Datum::Bool(true));
         assert!(str_value == Datum::Text(String::from("Hello")));
         assert!(num_value == Datum::Num(12));
         assert!(list_value == Datum::List(Vec::new()));
+        assert!(float_value == Datum::Decimal(3.14));
     }
 }
