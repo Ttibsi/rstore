@@ -28,4 +28,3 @@ jobs:
         with:
           toolchain: nightly
       - run: cargo test --verbose
-
